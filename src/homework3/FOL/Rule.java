@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Rule {
-	List<Literal> condition;
-	Literal production;
+	final List<Literal> condition;
+	final Literal production;
 
 	public Rule(String str) {
 		str = str.replace(" ", "");
@@ -28,16 +28,8 @@ public class Rule {
 		return condition;
 	}
 
-	public void setCondition(List<Literal> condition) {
-		this.condition = condition;
-	}
-
 	public Literal getProduction() {
 		return production;
-	}
-
-	public void setProduction(Literal production) {
-		this.production = production;
 	}
 
 }

@@ -69,7 +69,8 @@ public class BackwardChainingSystem {
 		for (Literal query : queries) {
 			boolean truth = false;
 			// dfs
-			truth = backwardChaining(query, new StringBuffer(),
+			System.out.println("Query:" + query);
+			truth = backwardChaining1(query, new StringBuffer(),
 					new HashMap<String, Set<String>>());
 			System.out.println(query + "=" + truth);
 			sb.append(String.valueOf(truth).toUpperCase());
@@ -136,6 +137,116 @@ public class BackwardChainingSystem {
 		}
 	}
 
+	boolean backwardChaining1(Literal query, StringBuffer trace,
+			Map<String, Set<String>> unification) {
+		// System.out.printf("bc: query=%s\n", query);
+		trace.append(query.toString());
+		trace.append(",");
+		// compare with fact
+		boolean hasFactMatched = false;
+		Map<String, Set<String>> factUniSet = new HashMap<String, Set<String>>();
+		Map<String, Set<String>> ruleUniSet = new HashMap<String, Set<String>>();
+
+		/* using indexing */
+		List<Literal> factList = factMap.get(query.getPredicate());
+		if (factList != null) {
+			for (Literal fact : factList) {
+				Map<String, String> factUnification = query.matchFact(fact);
+				if (factUnification != null) {
+					mergeUnification(factUniSet, factUnification);
+					hasFactMatched = true; // fact and consistent
+				}
+			}
+		}
+
+		// compare with rules
+		boolean resolvedByRule = false;
+
+		/* using indexing */
+		List<Rule> ruleList = ruleMap.get(query.getPredicate());
+		if (ruleList != null) {
+			for (Rule rule : ruleList) {
+				boolean resolvedWithOneRule = false;
+				Map<String, String> productUnification = query.matchRule(rule);
+				if (productUnification == null) {
+					continue;
+				}
+				Map<String, Set<String>> jointConditionUnification = new HashMap<String, Set<String>>();
+				mergeUnification(jointConditionUnification, productUnification);
+				List<Literal> conditions = rule.getCondition();
+				for (Literal con : conditions) {
+					Literal c = con.clone();
+					Literal.substitute(c, productUnification);
+					if (trace.toString().contains(c.toString())) {
+						// TODO may revisit
+						// loop detected
+						resolvedWithOneRule = false;
+						break;
+					} else {
+						Map<String, Set<String>> conditionUnification = new HashMap<String, Set<String>>();
+						resolvedWithOneRule &= backwardChaining1(c,
+								new StringBuffer(trace.toString()),
+								conditionUnification);
+						joinUnificationSet(jointConditionUnification,
+								conditionUnification);
+					}
+				}
+				// System.out.println(rule + "\t" + jointConditionUnification);
+				if (unifyCondition(jointConditionUnification, conditions)) {
+					selectUnificationSet(ruleUniSet, jointConditionUnification,
+							query);
+					resolvedWithOneRule = true;
+				} else {
+					resolvedWithOneRule = false;
+				}
+				resolvedByRule |= resolvedWithOneRule;
+			}
+		}
+
+		if (hasFactMatched) {
+			mergeUnificationSet(unification, factUniSet);
+		}
+		if (resolvedByRule) {
+			mergeUnificationSet(unification, ruleUniSet);
+		}
+
+		System.out.printf("return: query=%s\t\tunification=[%s] : %s\n", query,
+				unification, hasFactMatched || resolvedByRule);
+		return hasFactMatched || resolvedByRule;
+	}
+
+	private void selectUnificationSet(Map<String, Set<String>> map,
+			Map<String, Set<String>> unification, Literal query) {
+		for (String v : query.getVariables()) {
+			if (!Literal.isVairable(v))
+				continue;
+			Set<String> uniSet = unification.get(v);
+			if (map.containsKey(v)) {
+				map.get(v).addAll(uniSet);
+			} else {
+				map.put(v, uniSet);
+			}
+		}
+	}
+
+	private boolean unifyCondition(Map<String, Set<String>> unification,
+			List<Literal> conditions) {
+		for (Literal literal : conditions) {
+			for (String v : literal.getVariables()) {
+				Set<String> uniSet = unification.get(v);
+				if (uniSet == null) {
+					System.out.println("ERROR!!!");
+					System.out.println(unification);
+					System.out.println(conditions);
+				}
+				if (uniSet.isEmpty()) {
+					return false;
+				}
+
+			}
+		}
+		return true;
+	}
 
 	private boolean backwardChaining(Literal query, StringBuffer trace,
 			Map<String, Set<String>> siblingUnification) {
@@ -283,6 +394,27 @@ public class BackwardChainingSystem {
 				setUni.get(en.getKey()).add(en.getValue());
 			}
 		}
+	}
+
+	private void joinUnificationSet(Map<String, Set<String>> ToSetUni,
+			Map<String, Set<String>> AppendSetUni) {
+		for (Entry<String, Set<String>> en : AppendSetUni.entrySet()) {
+			if (!ToSetUni.containsKey(en.getKey())) {
+				ToSetUni.put(en.getKey(), en.getValue());
+			} else {
+				ToSetUni.put(en.getKey(),
+						joinSet(ToSetUni.get(en.getKey()), en.getValue()));
+			}
+		}
+	}
+
+	private Set<String> joinSet(Set<String> set1, Set<String> set2) {
+		Set<String> set = new HashSet<String>();
+		for (String s1 : set1) {
+			if (set2.contains(s1))
+				set.add(s1);
+		}
+		return set;
 	}
 
 	private void mergeUnificationSet(Map<String, Set<String>> ToSetUni,

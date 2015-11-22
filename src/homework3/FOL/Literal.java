@@ -122,6 +122,8 @@ public class Literal {
 						return null;
 				} else if (!v1 && v2) {
 					unification.put(x2, x1);
+				} else if (v1 && v2) {
+					unification.put(x2, x1);
 				}
 			}
 			// substitution
@@ -143,7 +145,7 @@ public class Literal {
 		}
 	}
 
-	private boolean isVairable(String x) {
+	public static boolean isVairable(String x) {
 		char c = x.charAt(0);
 		return 'a' <= c && c <= 'z';
 	}
