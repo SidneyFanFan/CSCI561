@@ -22,6 +22,8 @@ public class BackwardChainingSystem {
 	List<Rule> rules;
 	List<Literal> facts;
 
+	private static int RULE_COUNT = 0;
+
 	/** Rule Indexing */
 	Map<String, List<Rule>> ruleMap;
 
@@ -65,12 +67,15 @@ public class BackwardChainingSystem {
 
 	public void start(String exportPath) {
 		StringBuffer sb = new StringBuffer();
+		List<Literal> trace = new ArrayList<Literal>();
 		for (Literal query : queries) {
 			boolean truth = false;
 			// dfs
 			System.out.println("Query:" + query);
-			truth = backwardChaining1(query, new StringBuffer(),
+			trace.add(query);
+			truth = backwardChaining1(query, trace,
 					new HashMap<String, Set<String>>());
+			trace.remove(query);
 			System.out.println(query + "=" + truth);
 			sb.append(String.valueOf(truth).toUpperCase());
 			sb.append("\n");
@@ -105,17 +110,18 @@ public class BackwardChainingSystem {
 				throw new IllegalArgumentException("Empty input");
 			}
 			// standardize of variables
-			for (int i = 0; i < rules.size(); i++) {
-				Rule rule = rules.get(i);
-				for (Literal c : rule.getCondition()) {
-					for (int j = 0; j < c.getVariables().length; j++) {
-						c.getVariables()[j] += String.valueOf(i);
-					}
-				}
-				for (int j = 0; j < rule.getProduction().getVariables().length; j++) {
-					rule.getProduction().getVariables()[j] += String.valueOf(i);
-				}
-			}
+			// for (int i = 0; i < rules.size(); i++) {
+			// Rule rule = rules.get(i);
+			// for (Literal c : rule.getCondition()) {
+			// for (int j = 0; j < c.getVariables().length; j++) {
+			// c.getVariables()[j] += String.valueOf(i);
+			// }
+			// }
+			// for (int j = 0; j < rule.getProduction().getVariables().length;
+			// j++) {
+			// rule.getProduction().getVariables()[j] += String.valueOf(i);
+			// }
+			// }
 			System.out.println("Initialization finished:");
 			System.out.println("KB:");
 			for (Literal fact : facts) {
@@ -135,11 +141,9 @@ public class BackwardChainingSystem {
 		}
 	}
 
-	boolean backwardChaining1(Literal query, StringBuffer trace,
+	boolean backwardChaining1(Literal query, List<Literal> trace,
 			Map<String, Set<String>> unification) {
-		// System.out.printf("bc: query=%s\n", query);
-		trace.append(query.toString());
-		trace.append(",");
+		System.out.printf("bc: query=%s\ttrace=%s\n", query, trace);
 		// compare with fact
 		boolean hasFactMatched = false;
 		Map<String, Set<String>> factUniSet = new HashMap<String, Set<String>>();
@@ -164,6 +168,8 @@ public class BackwardChainingSystem {
 		List<Rule> ruleList = ruleMap.get(query.getPredicate());
 		if (ruleList != null) {
 			for (Rule rule : ruleList) {
+				rule = standardizeRule(rule);
+				System.out.printf("Applying rule: %s\n", rule);
 				boolean allConditionSatisfied = true;
 				Map<String, String> productUnification = query.matchRule(rule);
 				if (productUnification == null) {
@@ -175,15 +181,14 @@ public class BackwardChainingSystem {
 				for (Literal con : conditions) {
 					Literal c = con.clone();
 					Literal.substitute(c, productUnification);
-					if (trace.toString().contains(c.toString())) {
-						// TODO may revisit
-						// loop detected
+					if (loopDetected(trace, c)) {
 						allConditionSatisfied = false;
 					} else {
 						Map<String, Set<String>> conditionUnification = new HashMap<String, Set<String>>();
-						allConditionSatisfied &= backwardChaining1(c,
-								new StringBuffer(trace.toString()),
+						trace.add(c);
+						allConditionSatisfied &= backwardChaining1(c, trace,
 								conditionUnification);
+						trace.remove(c);
 						joinUnificationSet(jointConditionUnification,
 								conditionUnification);
 					}
@@ -212,6 +217,30 @@ public class BackwardChainingSystem {
 		System.out.printf("return: query=%s\t\tunification=[%s] : %s\n", query,
 				unification, hasFactMatched || resolvedByRule);
 		return hasFactMatched || resolvedByRule;
+	}
+
+	private boolean loopDetected(List<Literal> trace, Literal c) {
+		for (Literal literal : trace) {
+			if (literal.identify(c)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private Rule standardizeRule(Rule rule) {
+		Rule standardRule = rule.clone();
+		for (Literal c : standardRule.getCondition()) {
+			for (int j = 0; j < c.getVariables().length; j++) {
+				c.getVariables()[j] += String.valueOf(RULE_COUNT);
+			}
+		}
+		for (int j = 0; j < standardRule.getProduction().getVariables().length; j++) {
+			standardRule.getProduction().getVariables()[j] += String
+					.valueOf(RULE_COUNT);
+		}
+		RULE_COUNT++;
+		return standardRule;
 	}
 
 	private void selectUnificationSet(Map<String, Set<String>> map,

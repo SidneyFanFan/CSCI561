@@ -6,6 +6,7 @@ import java.util.List;
 public class Rule {
 	final List<Literal> condition;
 	final Literal production;
+	private String str;
 
 	public Rule(String str) {
 		str = str.replace(" ", "");
@@ -16,6 +17,7 @@ public class Rule {
 			condition.add(new Literal(cstr));
 		}
 		production = new Literal(str.substring(impliesPos + 2, str.length()));
+		this.str = str;
 	}
 
 	@Override
@@ -30,6 +32,10 @@ public class Rule {
 
 	public Literal getProduction() {
 		return production;
+	}
+
+	public Rule clone() {
+		return new Rule(str);
 	}
 
 }

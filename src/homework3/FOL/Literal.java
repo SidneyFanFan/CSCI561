@@ -166,4 +166,19 @@ public class Literal {
 		return true;
 	}
 
+	public boolean identify(Literal c) {
+		if ((this.negation == c.negation) && this.predicate.equals(c.predicate)
+				&& this.variables.length == c.variables.length) {
+			boolean v1, v2;
+			for (int i = 0; i < variables.length; i++) {
+				v1 = isVairable(variables[i]);
+				v2 = isVairable(c.variables[i]);
+				if (!v1 && !v2 && !variables[i].equals(c.variables[i])) {
+					return false;
+				}
+			}
+			return true;
+		} else
+			return false;
+	}
 }

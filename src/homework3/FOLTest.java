@@ -79,4 +79,18 @@ public class FOLTest {
 		Assert.assertEquals("[R([x]), B([y])] => H([x])", r.toString());
 	}
 
+	@Test
+	public void testIdentify() {
+		Literal l1 = new Literal("B(B,y)");
+		Literal l2 = new Literal("B(B,y)");
+		Literal l3 = new Literal("B(x0,y0)");
+		Literal l4 = new Literal("B(x1,y1)");
+		Literal l5 = new Literal("B(x1,y)");
+		Assert.assertTrue(l1.identify(l2));
+		Assert.assertTrue(l1.identify(l3));
+		Assert.assertTrue(l3.identify(l4));
+		Assert.assertTrue(l1.identify(l5));
+
+	}
+
 }
