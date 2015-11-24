@@ -1,5 +1,6 @@
 package homework3;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +18,9 @@ public class FOLTest {
 
 	public static List<String[]> literalsT;
 	public static List<String[]> literalsF;
+	public static BackwardChainingSystem bcs;
+	public static String[] configPaths;
+	public static int CONFIG_IDX;
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
@@ -32,6 +36,18 @@ public class FOLTest {
 		literalsF.add(new String[] { "L(A,y)", "L(C,y)" }); // F
 		literalsF.add(new String[] { "L(x,y)", "~L(x,y)" }); // F
 		literalsF.add(new String[] { "L(x)", "L(x,y)" }); // F
+
+		File dir = new File("hw3/test/");
+		if (dir.isDirectory()) {
+			File[] fs = dir.listFiles();
+			configPaths = new String[fs.length];
+			for (int i = 0; i < fs.length; i++) {
+				configPaths[i] = fs[i].getAbsolutePath();
+			}
+		} else {
+			configPaths = new String[] { "Error" };
+		}
+		CONFIG_IDX = 1;
 	}
 
 	@AfterClass
@@ -40,25 +56,20 @@ public class FOLTest {
 
 	@Before
 	public void setUp() throws Exception {
+		if (CONFIG_IDX <= configPaths.length) {
+			bcs = new BackwardChainingSystem(configPaths[CONFIG_IDX]);
+		}
 	}
 
 	@After
 	public void tearDown() throws Exception {
+		CONFIG_IDX++;
 	}
 
-	// @Test
-	// public void testResolvableTure() {
-	// for (String[] s : literalsT) {
-	// Assert.assertTrue(new Literal(s[0]).resolvable(new Literal(s[1])));
-	// }
-	// }
-	//
-	// @Test
-	// public void testResolvableFalse() {
-	// for (String[] s : literalsF) {
-	// Assert.assertFalse(new Literal(s[0]).resolvable(new Literal(s[1])));
-	// }
-	// }
+	@Test
+	public void testInput() {
+		bcs.start(String.format("hw3/test/output_%d.txt", CONFIG_IDX));
+	}
 
 	@Test
 	public void testParse() {

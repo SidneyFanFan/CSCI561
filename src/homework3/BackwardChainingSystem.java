@@ -36,7 +36,6 @@ public class BackwardChainingSystem {
 		// indexing
 		ruleMap = new HashMap<String, List<Rule>>();
 		factMap = new HashMap<String, List<Literal>>();
-
 		buildIndexing();
 	}
 
@@ -117,7 +116,6 @@ public class BackwardChainingSystem {
 					rule.getProduction().getVariables()[j] += String.valueOf(i);
 				}
 			}
-
 			System.out.println("Initialization finished:");
 			System.out.println("KB:");
 			for (Literal fact : facts) {
@@ -166,7 +164,7 @@ public class BackwardChainingSystem {
 		List<Rule> ruleList = ruleMap.get(query.getPredicate());
 		if (ruleList != null) {
 			for (Rule rule : ruleList) {
-				boolean resolvedWithOneRule = false;
+				boolean allConditionSatisfied = true;
 				Map<String, String> productUnification = query.matchRule(rule);
 				if (productUnification == null) {
 					continue;
@@ -180,26 +178,27 @@ public class BackwardChainingSystem {
 					if (trace.toString().contains(c.toString())) {
 						// TODO may revisit
 						// loop detected
-						resolvedWithOneRule = false;
-						break;
+						allConditionSatisfied = false;
 					} else {
 						Map<String, Set<String>> conditionUnification = new HashMap<String, Set<String>>();
-						resolvedWithOneRule &= backwardChaining1(c,
+						allConditionSatisfied &= backwardChaining1(c,
 								new StringBuffer(trace.toString()),
 								conditionUnification);
 						joinUnificationSet(jointConditionUnification,
 								conditionUnification);
 					}
+					if (!allConditionSatisfied)
+						break;
 				}
-				// System.out.println(rule + "\t" + jointConditionUnification);
-				if (unifyCondition(jointConditionUnification, conditions)) {
+				System.out.println(rule + "\t" + jointConditionUnification);
+				if (allConditionSatisfied
+						&& unifyCondition(jointConditionUnification, conditions)) {
+					// all conditions are satisfied
+					// and there is no conflict
 					selectUnificationSet(ruleUniSet, jointConditionUnification,
 							query);
-					resolvedWithOneRule = true;
-				} else {
-					resolvedWithOneRule = false;
+					resolvedByRule |= true;
 				}
-				resolvedByRule |= resolvedWithOneRule;
 			}
 		}
 
@@ -235,9 +234,7 @@ public class BackwardChainingSystem {
 			for (String v : literal.getVariables()) {
 				Set<String> uniSet = unification.get(v);
 				if (uniSet == null) {
-					System.out.println("ERROR!!!");
-					System.out.println(unification);
-					System.out.println(conditions);
+					return false;
 				}
 				if (uniSet.isEmpty()) {
 					return false;
