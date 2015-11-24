@@ -18,6 +18,7 @@ import java.util.Set;
 
 public class BackwardChainingSystem {
 
+	Set<String> constants;
 	List<Literal> queries;
 	List<Rule> rules;
 	List<Literal> facts;
@@ -34,6 +35,7 @@ public class BackwardChainingSystem {
 		queries = new ArrayList<Literal>();
 		rules = new ArrayList<Rule>();
 		facts = new ArrayList<Literal>();
+		constants = new HashSet<String>();
 		init(configPath);
 		// indexing
 		ruleMap = new HashMap<String, List<Rule>>();
@@ -68,19 +70,31 @@ public class BackwardChainingSystem {
 	public void start(String exportPath) {
 		StringBuffer sb = new StringBuffer();
 		List<Literal> trace = new ArrayList<Literal>();
-		for (Literal query : queries) {
+
+		for (int i = 2; i < queries.size(); i++) {
+			Literal query = queries.get(i);
 			boolean truth = false;
 			// dfs
 			System.out.println("Query:" + query);
 			trace.add(query);
 			truth = backwardChaining1(query, trace,
-					new HashMap<String, Set<String>>());
+					generateInitUnification(query));
 			trace.remove(query);
 			System.out.println(query + "=" + truth);
 			sb.append(String.valueOf(truth).toUpperCase());
 			sb.append("\n");
+			break;
 		}
 		export(sb.toString(), exportPath);
+	}
+
+	private Map<String, Set<String>> generateInitUnification(Literal query) {
+		Map<String, Set<String>> map = new HashMap<String, Set<String>>();
+		for (String v : query.getVariables()) {
+			if (Literal.isVairable(v))
+				map.put(v, new HashSet<String>(constants));
+		}
+		return map;
 	}
 
 	private void init(String configPath) {
@@ -109,19 +123,24 @@ public class BackwardChainingSystem {
 				sc.close();
 				throw new IllegalArgumentException("Empty input");
 			}
-			// standardize of variables
-			// for (int i = 0; i < rules.size(); i++) {
-			// Rule rule = rules.get(i);
-			// for (Literal c : rule.getCondition()) {
-			// for (int j = 0; j < c.getVariables().length; j++) {
-			// c.getVariables()[j] += String.valueOf(i);
-			// }
-			// }
-			// for (int j = 0; j < rule.getProduction().getVariables().length;
-			// j++) {
-			// rule.getProduction().getVariables()[j] += String.valueOf(i);
-			// }
-			// }
+			// Get all constant
+			for (Literal fact : facts) {
+				for (String c : fact.getVariables()) {
+					if (!Literal.isVairable(c))
+						constants.add(c);
+				}
+			}
+			for (Rule rule : rules) {
+				for (Literal condition : rule.getCondition()) {
+					for (String c : condition.getVariables())
+						if (!Literal.isVairable(c))
+							constants.add(c);
+				}
+				for (String c : rule.getProduction().getVariables())
+					if (!Literal.isVairable(c))
+						constants.add(c);
+			}
+
 			System.out.println("Initialization finished:");
 			System.out.println("KB:");
 			for (Literal fact : facts) {
@@ -134,6 +153,8 @@ public class BackwardChainingSystem {
 			for (Literal query : queries) {
 				System.out.println(query);
 			}
+			System.out.println("Constants: " + constants);
+
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IllegalArgumentException e) {
@@ -143,7 +164,8 @@ public class BackwardChainingSystem {
 
 	boolean backwardChaining1(Literal query, List<Literal> trace,
 			Map<String, Set<String>> unification) {
-		System.out.printf("bc: query=%s\ttrace=%s\n", query, trace);
+		System.out.printf("bc: query=%s\ttrace=%s\tnunification=%s\n", query,
+				trace, unification);
 		// compare with fact
 		boolean hasFactMatched = false;
 		Map<String, Set<String>> factUniSet = new HashMap<String, Set<String>>();
@@ -153,15 +175,22 @@ public class BackwardChainingSystem {
 		List<Literal> factList = factMap.get(query.getPredicate());
 		if (factList != null) {
 			for (Literal fact : factList) {
-				System.out.printf("Applying fact: %s\n", fact);
 				Map<String, String> factUnification = query.matchFact(fact);
 				if (factUnification != null) {
+					System.out.printf("Match fact: %s\n", fact);
 					mergeUnification(factUniSet, factUnification);
 					hasFactMatched = true; // fact and consistent
 				}
 			}
 		}
 
+		if (hasFactMatched) {
+			joinUnificationSet(unification, factUniSet);
+			System.out.printf("return: fact uni= %s\n", factUniSet);
+			// if (factUniSet.equals(unification))
+			// return true;
+		}
+		
 		// compare with rules
 		boolean resolvedByRule = false;
 
@@ -170,14 +199,16 @@ public class BackwardChainingSystem {
 		if (ruleList != null) {
 			for (Rule rule : ruleList) {
 				rule = standardizeRule(rule);
-				System.out.printf("Applying rule: %s\n", rule);
 				boolean allConditionSatisfied = true;
 				Map<String, String> productUnification = query.matchRule(rule);
+				System.out.printf("Applying rule: %s\t%s\n", rule,
+						productUnification);
 				if (productUnification == null) {
-					continue;
+					continue; // actually we are checking negation
 				}
-				Map<String, Set<String>> jointConditionUnification = new HashMap<String, Set<String>>();
-				mergeUnification(jointConditionUnification, productUnification);
+				Map<String, Set<String>> jointConditionUnification = generateInitUnification(rule); // TODO
+				joinUnificationMapToSet(jointConditionUnification,
+						productUnification);
 				List<Literal> conditions = rule.getCondition();
 				for (Literal con : conditions) {
 					Literal c = con.clone();
@@ -185,41 +216,55 @@ public class BackwardChainingSystem {
 					if (loopDetected(trace, c)) {
 						allConditionSatisfied = false;
 					} else {
-						Map<String, Set<String>> conditionUnification = new HashMap<String, Set<String>>();
+						Map<String, Set<String>> conditionUnification = generateInitUnification(c);
 						trace.add(c);
 						allConditionSatisfied &= backwardChaining1(c, trace,
 								conditionUnification);
 						trace.remove(c);
 						joinUnificationSet(jointConditionUnification,
 								conditionUnification);
+						System.out.printf(
+								"After checking condition [%s]: %s\n", c,
+								jointConditionUnification);
 					}
 					if (!allConditionSatisfied)
 						break;
 				}
-				System.out.println(rule + "\t" + jointConditionUnification);
 				if (allConditionSatisfied
 						&& unifyCondition(jointConditionUnification, conditions)) {
 					// all conditions are satisfied
 					// and there is no conflict
 					selectUnificationSet(ruleUniSet, jointConditionUnification,
 							query);
+					System.out.println(rule + "\t" + jointConditionUnification);
 					resolvedByRule |= true;
 				}
 			}
 		}
 
-		if (hasFactMatched) {
-			mergeUnificationSet(unification, factUniSet);
-			System.out.printf("return: fact uni= %s\n", factUniSet);
-		}
 		if (resolvedByRule) {
-			mergeUnificationSet(unification, ruleUniSet);
+			joinUnificationSet(unification, ruleUniSet);
 			System.out.printf("return: rule uni= %s\n", ruleUniSet);
 		}
 
 		System.out.printf("return: query=%s\t\tunification=[%s] : %s\n", query,
 				unification, hasFactMatched || resolvedByRule);
 		return hasFactMatched || resolvedByRule;
+	}
+
+	private Map<String, Set<String>> generateInitUnification(Rule rule) {
+		Map<String, Set<String>> map = new HashMap<String, Set<String>>();
+		for (Literal l : rule.getCondition()) {
+			for (String v : l.getVariables()) {
+				if (Literal.isVairable(v))
+					map.put(v, new HashSet<String>(constants));
+			}
+		}
+		for (String v : rule.getProduction().getVariables()) {
+			if (Literal.isVairable(v))
+				map.put(v, new HashSet<String>(constants));
+		}
+		return map;
 	}
 
 	private boolean loopDetected(List<Literal> trace, Literal c) {
@@ -252,10 +297,21 @@ public class BackwardChainingSystem {
 			if (!Literal.isVairable(v))
 				continue;
 			Set<String> uniSet = unification.get(v);
-			if (map.containsKey(v)) {
-				map.get(v).addAll(uniSet);
-			} else {
-				map.put(v, uniSet);
+			if (uniSet == null) {
+				// the choice of v is anything
+				continue;
+			}
+			try {
+				if (map.containsKey(v)) {
+					map.get(v).addAll(uniSet);
+				} else {
+					map.put(v, uniSet);
+				}
+			} catch (NullPointerException e) {
+				System.err.println(map);
+				System.err.println(unification);
+				System.err.println(query);
+				System.exit(0);
 			}
 		}
 	}
@@ -433,6 +489,16 @@ public class BackwardChainingSystem {
 			} else {
 				ToSetUni.put(en.getKey(),
 						joinSet(ToSetUni.get(en.getKey()), en.getValue()));
+			}
+		}
+	}
+
+	private void joinUnificationMapToSet(Map<String, Set<String>> setMap,
+			Map<String, String> stringMap) {
+		for (Entry<String, Set<String>> en : setMap.entrySet()) {
+			if (stringMap.containsKey(en.getKey())) {
+				en.getValue().clear();
+				en.getValue().add(stringMap.get(en.getKey()));
 			}
 		}
 	}

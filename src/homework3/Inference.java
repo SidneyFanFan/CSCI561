@@ -3,9 +3,10 @@ package homework3;
 public class Inference {
 
 	public static void main(String[] args) {
-		// args = new String[] { "-i", "hw3/input_0.txt" };
+		// args = new String[] { "-i", "hw3/input_1.txt" };
 		// args = new String[] { "-i", "hw3/test/test_3.txt" };
-		args = new String[] { "-i", "/Users/apple/Documents/workspace/inferencetestsample/samples/testInput.txt" };
+		args = new String[] { "-i",
+				"/Users/apple/Documents/workspace/inferencetestsample/samples/testInput.txt" };
 		if (args.length != 2) {
 			System.out.println("Input format: -i <filename>");
 			return;
