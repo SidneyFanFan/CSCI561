@@ -153,6 +153,7 @@ public class BackwardChainingSystem {
 		List<Literal> factList = factMap.get(query.getPredicate());
 		if (factList != null) {
 			for (Literal fact : factList) {
+				System.out.printf("Applying fact: %s\n", fact);
 				Map<String, String> factUnification = query.matchFact(fact);
 				if (factUnification != null) {
 					mergeUnification(factUniSet, factUnification);
@@ -209,9 +210,11 @@ public class BackwardChainingSystem {
 
 		if (hasFactMatched) {
 			mergeUnificationSet(unification, factUniSet);
+			System.out.printf("return: fact uni= %s\n", factUniSet);
 		}
 		if (resolvedByRule) {
 			mergeUnificationSet(unification, ruleUniSet);
+			System.out.printf("return: rule uni= %s\n", ruleUniSet);
 		}
 
 		System.out.printf("return: query=%s\t\tunification=[%s] : %s\n", query,
@@ -222,10 +225,10 @@ public class BackwardChainingSystem {
 	private boolean loopDetected(List<Literal> trace, Literal c) {
 		for (Literal literal : trace) {
 			if (literal.identify(c)) {
-				return false;
+				return true;
 			}
 		}
-		return true;
+		return false;
 	}
 
 	private Rule standardizeRule(Rule rule) {

@@ -173,7 +173,11 @@ public class Literal {
 			for (int i = 0; i < variables.length; i++) {
 				v1 = isVairable(variables[i]);
 				v2 = isVairable(c.variables[i]);
-				if (!v1 && !v2 && !variables[i].equals(c.variables[i])) {
+				if (v1 && v2) {
+					continue;
+				} else if (!v1 && !v2) {
+					return variables[i].equals(c.variables[i]);
+				} else {
 					return false;
 				}
 			}
