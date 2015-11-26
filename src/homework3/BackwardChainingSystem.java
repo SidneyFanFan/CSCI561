@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -71,7 +72,15 @@ public class BackwardChainingSystem {
 		StringBuffer sb = new StringBuffer();
 		List<Literal> trace = new ArrayList<Literal>();
 
-		for (int i = 2; i < queries.size(); i++) {
+		PrintStream sysout = System.out;
+		for (int i = 0; i < queries.size(); i++) {
+			long s = System.currentTimeMillis();
+			// try {
+			// System.setOut(new PrintStream(new File(String.format(
+			// "hw3/test/generated/%d_log.txt", i))));
+			// } catch (FileNotFoundException e) {
+			// e.printStackTrace();
+			// }
 			Literal query = queries.get(i);
 			boolean truth = false;
 			// dfs
@@ -80,11 +89,14 @@ public class BackwardChainingSystem {
 			truth = backwardChaining1(query, trace,
 					generateInitUnification(query));
 			trace.remove(query);
-			System.out.println(query + "=" + truth);
+			sysout.printf("%dth: %s = %s\t %d\n", i, query, truth,
+					System.currentTimeMillis() - s);
 			sb.append(String.valueOf(truth).toUpperCase());
 			sb.append("\n");
-			break;
+			// break;
 		}
+		System.setOut(sysout);
+
 		export(sb.toString(), exportPath);
 	}
 
@@ -166,6 +178,10 @@ public class BackwardChainingSystem {
 			Map<String, Set<String>> unification) {
 		System.out.printf("bc: query=%s\ttrace=%s\tnunification=%s\n", query,
 				trace, unification);
+		// check if unification is workable
+		// if (!isValidUnification(unification)) {
+		// return false;
+		// }
 		// compare with fact
 		boolean hasFactMatched = false;
 		Map<String, Set<String>> factUniSet = new HashMap<String, Set<String>>();
@@ -185,12 +201,16 @@ public class BackwardChainingSystem {
 		}
 
 		if (hasFactMatched) {
-			joinUnificationSet(unification, factUniSet);
-			System.out.printf("return: fact uni= %s\n", factUniSet);
+			joinUnificationSet(factUniSet, unification);
+			System.out.printf("return fact for [%s] uni= %s\n", query,
+					factUniSet);
 			// if (factUniSet.equals(unification))
 			// return true;
 		}
-		
+
+		// OPTIMIZATION 1
+		// remove possible constants from fact already achieve
+
 		// compare with rules
 		boolean resolvedByRule = false;
 
@@ -209,14 +229,17 @@ public class BackwardChainingSystem {
 				Map<String, Set<String>> jointConditionUnification = generateInitUnification(rule); // TODO
 				joinUnificationMapToSet(jointConditionUnification,
 						productUnification);
+				// mapSetDifference(jointConditionUnification, factUniSet);
 				List<Literal> conditions = rule.getCondition();
 				for (Literal con : conditions) {
 					Literal c = con.clone();
 					Literal.substitute(c, productUnification);
 					if (loopDetected(trace, c)) {
+						System.out.println("Loop detected: " + query);
 						allConditionSatisfied = false;
 					} else {
 						Map<String, Set<String>> conditionUnification = generateInitUnification(c);
+						// mapSetDifference(conditionUnification, factUniSet);
 						trace.add(c);
 						allConditionSatisfied &= backwardChaining1(c, trace,
 								conditionUnification);
@@ -243,14 +266,36 @@ public class BackwardChainingSystem {
 		}
 
 		if (resolvedByRule) {
-			joinUnificationSet(unification, ruleUniSet);
-			System.out.printf("return: rule uni= %s\n", ruleUniSet);
+			joinUnificationSet(ruleUniSet, unification);
+			System.out.printf("return rule for [%s] uni= %s\n", query,
+					ruleUniSet);
 		}
+		mergeUnificationSet(unification, factUniSet);
+		mergeUnificationSet(unification, ruleUniSet);
 
 		System.out.printf("return: query=%s\t\tunification=[%s] : %s\n", query,
 				unification, hasFactMatched || resolvedByRule);
 		return hasFactMatched || resolvedByRule;
 	}
+
+	private boolean isValidUnification(Map<String, Set<String>> unification) {
+		for (Entry<String, Set<String>> en : unification.entrySet()) {
+			if (en.getValue().isEmpty()) {
+				return false;
+			}
+
+		}
+		return true;
+	}
+
+	// private void mapSetDifference(Map<String, Set<String>> x,
+	// Map<String, Set<String>> y) {
+	// for (Entry<String, Set<String>> en : x.entrySet()) {
+	// if (y.containsKey(en.getKey())) {
+	// en.getValue().removeAll(y.get(en.getKey()));
+	// }
+	// }
+	// }
 
 	private Map<String, Set<String>> generateInitUnification(Rule rule) {
 		Map<String, Set<String>> map = new HashMap<String, Set<String>>();
