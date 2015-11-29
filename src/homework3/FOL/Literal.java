@@ -120,10 +120,16 @@ public class Literal {
 				if (!v1 && !v2) {
 					if (!x1.equals(x2))
 						return null;
-				} else if (!v1 && v2) {
-					unification.put(x2, x1);
-				} else if (v1 && v2) {
-					unification.put(x2, x1);
+				} else if (v2) {
+					if (unification.containsKey(x2)) {
+						if (unification.get(x2).equals(x1)) {
+							continue;
+						} else {
+							return null;
+						}
+					} else {
+						unification.put(x2, x1);
+					}
 				}
 			}
 			// substitution
@@ -170,18 +176,19 @@ public class Literal {
 		if ((this.negation == c.negation) && this.predicate.equals(c.predicate)
 				&& this.variables.length == c.variables.length) {
 			boolean v1, v2;
+			boolean isIdentified = true;
 			for (int i = 0; i < variables.length; i++) {
 				v1 = isVairable(variables[i]);
 				v2 = isVairable(c.variables[i]);
 				if (v1 && v2) {
-					continue;
+					isIdentified &= true;
 				} else if (!v1 && !v2) {
-					return variables[i].equals(c.variables[i]);
+					isIdentified &= variables[i].equals(c.variables[i]);
 				} else {
 					return false;
 				}
 			}
-			return true;
+			return isIdentified;
 		} else
 			return false;
 	}

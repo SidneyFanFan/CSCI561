@@ -60,31 +60,87 @@ public class LiteralTest {
 	}
 
 	@Test
-	public void testIdentify1() {
-		Literal l1 = new Literal("B(B,y)");
-		Literal l2 = new Literal("B(B,y)");
+	public void testIdentify_vvvv() {
+		Literal l1 = new Literal("B(x0,y0)");
+		Literal l2 = new Literal("B(x1,y1)");
 		Assert.assertTrue(l1.identify(l2));
 	}
 
 	@Test
-	public void testIdentify2() {
-		Literal l1 = new Literal("B(B,y)");
-		Literal l3 = new Literal("B(x0,y0)");
-		Assert.assertFalse(l1.identify(l3));
+	public void testIdentify_vvvx() {
+		Literal l1 = new Literal("B(x0,y0)");
+		Literal l2 = new Literal("B(x1,E)");
+		Assert.assertFalse(l1.identify(l2));
 	}
 
 	@Test
-	public void testIdentify3() {
-		Literal l3 = new Literal("B(x0,y0)");
-		Literal l4 = new Literal("B(x1,y1)");
-		Assert.assertTrue(l3.identify(l4));
+	public void testIdentify_vvxv() {
+		Literal l1 = new Literal("B(x0,y0)");
+		Literal l2 = new Literal("B(E,y1)");
+		Assert.assertFalse(l1.identify(l2));
 	}
 
 	@Test
-	public void testIdentify4() {
-		Literal l1 = new Literal("B(B,y)");
-		Literal l5 = new Literal("B(x1,y)");
-		Assert.assertFalse(l1.identify(l5));
+	public void testIdentify_vvxx() {
+		Literal l1 = new Literal("B(x0,y0)");
+		Literal l2 = new Literal("B(A,B)");
+		Assert.assertFalse(l1.identify(l2));
+	}
+
+	@Test
+	public void testIdentify_xvxv() {
+		Literal l1 = new Literal("B(E,y0)");
+		Literal l2 = new Literal("B(E,y1)");
+		Assert.assertTrue(l1.identify(l2));
+	}
+
+	@Test
+	public void testIdentify_vxvx() {
+		Literal l1 = new Literal("B(x0,E)");
+		Literal l2 = new Literal("B(x1,E)");
+		Assert.assertTrue(l1.identify(l2));
+	}
+
+	@Test
+	public void testIdentify_xvvx() {
+		Literal l1 = new Literal("B(E,y0)");
+		Literal l2 = new Literal("B(x1,E)");
+		Assert.assertFalse(l1.identify(l2));
+	}
+
+	@Test
+	public void testIdentify_vxxv() {
+		Literal l1 = new Literal("B(x0,E)");
+		Literal l2 = new Literal("B(E,y1)");
+		Assert.assertFalse(l1.identify(l2));
+	}
+
+	@Test
+	public void testIdentify_xxxv() {
+		Literal l1 = new Literal("B(E,F)");
+		Literal l2 = new Literal("B(E,y1)");
+		Assert.assertFalse(l1.identify(l2));
+	}
+
+	@Test
+	public void testIdentify_xxvx() {
+		Literal l1 = new Literal("B(E,F)");
+		Literal l2 = new Literal("B(x1,F)");
+		Assert.assertFalse(l1.identify(l2));
+	}
+
+	@Test
+	public void testIdentify_xxxx() {
+		Literal l1 = new Literal("B(E,F)");
+		Literal l2 = new Literal("B(E,F)");
+		Assert.assertTrue(l1.identify(l2));
+	}
+
+	@Test
+	public void testIdentify_xxxp() {
+		Literal l1 = new Literal("B(E,F)");
+		Literal l2 = new Literal("B(E,G)");
+		Assert.assertFalse(l1.identify(l2));
 	}
 
 }
