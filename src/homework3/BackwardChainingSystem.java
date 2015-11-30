@@ -316,10 +316,10 @@ public class BackwardChainingSystem {
 			Map<String, List<Literal>> factMap, Literal goal,
 			Map<String, String> theta, Set<Map<String, String>> yields,
 			Stack<Literal> track) {
-		System.out.printf("FOL_BC_OR: goal=%s, theta=%s, track=%s\n", goal,
-				theta, track);
+//		System.out.printf("FOL_BC_OR: goal=%s, theta=%s, track=%s\n", goal,
+//				theta, track);
 		if (loopDetected(track, goal)) {
-			System.out.println("Loop detected");
+//			System.out.println("Loop detected");
 			return false;
 		} else {
 			track.push(goal);
@@ -341,7 +341,7 @@ public class BackwardChainingSystem {
 							factUnification.put(en.getKey(), en.getValue());
 						}
 					}
-					System.out.printf("Match fact: %s\n", fact);
+//					System.out.printf("Match fact: %s\n", fact);
 					yields.add(factUnification);
 					matched |= true;
 
@@ -353,7 +353,7 @@ public class BackwardChainingSystem {
 		if (ruleList != null) {
 			for (Rule rule : ruleList) {
 				rule = standardizeRule(rule);
-				System.out.printf("Checking rule: %s\n", rule);
+//				System.out.printf("Checking rule: %s\n", rule);
 				Set<Map<String, String>> yields_and = new HashSet<Map<String, String>>();
 				if (!FOL_BC_AND(ruleMap, factMap, rule.getCondition(),
 						UNIFY(rule.getProduction(), goal, theta), yields_and,
@@ -375,8 +375,8 @@ public class BackwardChainingSystem {
 			Map<String, List<Literal>> factMap, List<Literal> goals,
 			Map<String, String> theta, Set<Map<String, String>> yields,
 			Stack<Literal> track) {
-		System.out.printf("FOL_BC_AND: goal=%s, theta=%s, track=%s\n", goals,
-				theta, track);
+//		System.out.printf("FOL_BC_AND: goal=%s, theta=%s, track=%s\n", goals,
+//				theta, track);
 		if (theta == null)
 			return false;
 		else if (goals.isEmpty()) {
