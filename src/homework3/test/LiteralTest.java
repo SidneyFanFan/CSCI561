@@ -1,8 +1,12 @@
 package homework3.test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
+import homework3.BackwardChainingSystem;
 import homework3.FOL.Literal;
 import homework3.FOL.Rule;
 
@@ -143,4 +147,111 @@ public class LiteralTest {
 		Assert.assertFalse(l1.identify(l2));
 	}
 
+	@Test
+	public void test_UNIFY1() {
+		Map<String, String> uni = BackwardChainingSystem
+				.UNIFY(new Literal("D(x,y)"), new Literal("D(A,B)"),
+						new HashMap<String, String>());
+		Assert.assertTrue(uni.get("x").equals("A"));
+		Assert.assertTrue(uni.get("y").equals("B"));
+	}
+
+	@Test
+	public void test_UNIFY2() {
+		Map<String, String> uni = BackwardChainingSystem
+				.UNIFY(new Literal("D(x,y)"), new Literal("D(A,A)"),
+						new HashMap<String, String>());
+		Assert.assertTrue(uni.get("x").equals("A"));
+		Assert.assertTrue(uni.get("y").equals("A"));
+	}
+
+	@Test
+	public void test_UNIFY3() {
+		Map<String, String> uni = BackwardChainingSystem.UNIFY(new Literal(
+				"D(x0,y0)"), new Literal("D(x1,y1)"),
+				new HashMap<String, String>());
+		Assert.assertTrue(uni.get("x0").equals("x1"));
+		Assert.assertTrue(uni.get("y0").equals("y1"));
+	}
+
+	@Test
+	public void test_UNIFY4() {
+		Map<String, String> uni = BackwardChainingSystem
+				.UNIFY(new Literal("D(x,B)"), new Literal("D(A,y)"),
+						new HashMap<String, String>());
+		Map<String, String> unir = BackwardChainingSystem
+				.UNIFY(new Literal("D(A,y)"), new Literal("D(x,B)"),
+						new HashMap<String, String>());
+		Assert.assertTrue(uni.get("x").equals("A"));
+		Assert.assertTrue(unir.get("y").equals("B"));
+	}
+
+	@Test
+	public void test_UNIFY5() {
+		Map<String, String> uni = BackwardChainingSystem
+				.UNIFY(new Literal("D(x,x)"), new Literal("D(y,C)"),
+						new HashMap<String, String>());
+		Assert.assertTrue(uni.get("x").equals("C"));
+		Assert.assertTrue(uni.get("y").equals("C"));
+	}
+
+	@Test
+	public void test_UNIFY6() {
+		Map<String, String> uni = BackwardChainingSystem
+				.UNIFY(new Literal("D(x,x)"), new Literal("D(C,y)"),
+						new HashMap<String, String>());
+		Map<String, String> unir = BackwardChainingSystem
+				.UNIFY(new Literal("D(C,y)"), new Literal("D(x,x)"),
+						new HashMap<String, String>());
+		System.out.println(uni);
+		System.out.println(unir);
+		Assert.assertTrue(uni.get("x").equals("C"));
+		Assert.assertTrue(unir.get("y").equals("C"));
+
+	}
+
+	@Test
+	public void test_UNIFY7() {
+		Map<String, String> uni = BackwardChainingSystem.UNIFY(new Literal(
+				"D(x,x,x)"), new Literal("D(y,C,C)"),
+				new HashMap<String, String>());
+		Assert.assertTrue(uni.get("x").equals("C"));
+		Assert.assertTrue(uni.get("y").equals("C"));
+	}
+
+	@Test
+	public void test_UNIFY8() {
+		Map<String, String> uni = BackwardChainingSystem.UNIFY(new Literal(
+				"D(x,x,x)"), new Literal("D(C,C,y)"),
+				new HashMap<String, String>());
+		Map<String, String> unir = BackwardChainingSystem.UNIFY(new Literal(
+				"D(C,C,y)"), new Literal("D(x,x,x)"),
+				new HashMap<String, String>());
+		Assert.assertTrue(uni.get("x").equals("C"));
+		Assert.assertTrue(uni.get("y").equals("C"));
+	}
+
+	@Test
+	public void test_UNIFY9() {
+		Map<String, String> uni = BackwardChainingSystem.UNIFY(new Literal(
+				"D(x,B,x)"), new Literal("D(y,C,C)"),
+				new HashMap<String, String>());
+		Assert.assertTrue(uni == null);
+	}
+
+	@Test
+	public void test_UNIFY10() {
+		Map<String, String> uni = BackwardChainingSystem.UNIFY(new Literal(
+				"D(x,x,x)"), new Literal("D(y,C,D)"),
+				new HashMap<String, String>());
+		Assert.assertTrue(uni == null);
+	}
+
+	@Test
+	public void test_FOL() {
+		BackwardChainingSystem bcs = new BackwardChainingSystem(
+				"hw3/input_1.txt");
+		System.out.println(bcs.FOL_BC_ASK(new Literal("F(Bob)")));
+
+	}
 }

@@ -85,6 +85,61 @@ public class Literal {
 		return null;
 	}
 
+	public Map<String, String> unify(Literal goal) {
+		if (this.negation == goal.negation
+				&& this.predicate.equals(goal.predicate)
+				&& this.variables.length == goal.variables.length) {
+			Map<String, String> unification = new HashMap<String, String>();
+			for (int i = 0; i < variables.length; i++) {
+				String x1 = this.variables[i];
+				String x2 = goal.variables[i];
+				boolean v1 = isVairable(x1);
+				boolean v2 = isVairable(x2);
+				if (!v1 && !v2) {
+					if (!x1.equals(x2)) {
+						return null;
+					} else {
+						// both are the same constant
+						continue;
+					}
+				} else if (v1 && !v2) {
+					addKVInUnification(unification, x1, x2);
+					if (unification == null)
+						return null;
+				} else if (!v1 && v2) {
+					addKVInUnification(unification, x2, x1);
+					if (unification == null)
+						return null;
+				} else { // v1 and v2
+					
+				}
+			}
+		}
+		// return null means cannot be unified
+		return null;
+	}
+
+	private void addKVInUnification(Map<String, String> unification, String x1,
+			String x2) {
+		if (unification.containsKey(x1)) {
+			String x1_value = unification.get(x1);
+			if (isVairable(x1_value)) {
+				// (x1,x1)/(x1_value,x2=John)
+				// x1/x1_value is already there
+				// now add {x1/x2=John} and {x1_value/x2=John}
+				unification.put(x1, x2);
+				addKVInUnification(unification, x1_value, x2);
+			} else {
+				// x1_value is constant
+				// x2 is also constant
+				// conflict return null
+				unification = null;
+			}
+		} else {
+			unification.put(x1, x2);
+		}
+	}
+
 	public Map<String, String> matchFact(Literal fact) {
 		if (this.negation == fact.negation
 				&& this.predicate.equals(fact.predicate)

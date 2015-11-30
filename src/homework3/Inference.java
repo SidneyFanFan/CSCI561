@@ -8,7 +8,7 @@ public class Inference {
 		// args = new String[] { "-i",
 		// "/Users/apple/Documents/workspace/inferencetestsample/samples/testInput.txt"
 		// };
-		args = new String[] { "-i", "hw3/test/siqi/input_4.txt" };
+		args = new String[] { "-i", "hw3/test/naiqing2/input_23.txt" };
 		if (args.length != 2) {
 			System.out.println("Input format: -i <filename>");
 			return;
