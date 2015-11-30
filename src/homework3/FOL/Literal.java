@@ -111,7 +111,7 @@ public class Literal {
 					if (unification == null)
 						return null;
 				} else { // v1 and v2
-					
+
 				}
 			}
 		}
@@ -197,13 +197,15 @@ public class Literal {
 		return null;
 	}
 
-	public static void substitute(Literal l, Map<String, String> unification) {
-		String[] vs = l.variables;
+	public static Literal substitute(Literal l, Map<String, String> unification) {
+		Literal subst = l.clone();
+		String[] vs = subst.variables;
 		for (int i = 0; i < vs.length; i++) {
 			if (unification.containsKey(vs[i])) {
 				vs[i] = unification.get(vs[i]);
 			}
 		}
+		return subst;
 	}
 
 	public static boolean isVairable(String x) {
