@@ -2,7 +2,6 @@ package homework3.test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -223,9 +222,6 @@ public class LiteralTest {
 	public void test_UNIFY8() {
 		Map<String, String> uni = BackwardChainingSystem.UNIFY(new Literal(
 				"D(x,x,x)"), new Literal("D(C,C,y)"),
-				new HashMap<String, String>());
-		Map<String, String> unir = BackwardChainingSystem.UNIFY(new Literal(
-				"D(C,C,y)"), new Literal("D(x,x,x)"),
 				new HashMap<String, String>());
 		Assert.assertTrue(uni.get("x").equals("C"));
 		Assert.assertTrue(uni.get("y").equals("C"));
